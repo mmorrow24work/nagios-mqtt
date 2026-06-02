@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  mqtt-broker:
+    image: eclipse-mosquitto:2
+    container_name: mqtt-broker
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    restart: unless-stopped
+
+  nagios:
+    image: jasonrivers/nagios:latest
+    container_name: nagios
+    ports:
+      - "8080:80"
+    environment:
+      NAGIOSADMIN_USER: nagiosadmin
+      NAGIOSADMIN_PASS: nagios
+    volumes:
+      - ./nagios/conf.d:/opt/nagios/etc/conf.d
+      - nagios_rw:/opt/nagios/var/rw
+    restart: unless-stopped
+
+  publisher:
+    image: alpine:3.20
+    container_name: publisher
+    command: sh /scripts/publisher.sh
+    volumes:
+      - ./scripts:/scripts:ro
+    depends_on:
+      - mqtt-broker
+    restart: unless-stopped
+
+  sidecar:
+    build: ./sidecar
+    container_name: nagios-sidecar
+    environment:
+      MQTT_BROKER: mqtt-broker
+      MQTT_PORT: "1883"
+      MQTT_TOPIC: "lab/#"
+      NAGIOS_CMD_FILE: /opt/nagios/var/rw/nagios.cmd
+      NAGIOS_CONF_DIR: /opt/nagios/etc/conf.d
+      NAGIOS_CONTAINER: nagios
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - nagios_rw:/opt/nagios/var/rw
+      - ./nagios/conf.d:/opt/nagios/etc/conf.d
+    depends_on:
+      - mqtt-broker
+      - nagios
+    restart: unless-stopped
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  nagios_rw:
