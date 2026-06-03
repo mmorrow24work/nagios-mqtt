@@ -4,3 +4,6 @@ nagios/conf.d/site*.cfg
 # Mosquitto runtime data
 mosquitto/data/
 mosquitto/log/
+
+# Keep docs/screenshots committed
+!docs/screenshots/*.png
