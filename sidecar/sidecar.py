@@ -70,10 +70,11 @@ def create_site_config(site: str) -> bool:
         return False
 
     content = f"""define host {{
-    use                     generic-host
+    use                     linux-server
     host_name               {site}
     alias                   {site}
     address                 127.0.0.1
+    notification_period     24x7
     active_checks_enabled   0
     passive_checks_enabled  1
     check_freshness         1
@@ -84,33 +85,36 @@ define service {{
     use                     generic-service
     host_name               {site}
     service_description     Temperature
-    check_command           check_dummy!3!"No data received"
+    check_command           check_dummy!3!No data received
     active_checks_enabled   0
     passive_checks_enabled  1
     check_freshness         1
     freshness_threshold     120
+    notification_period     24x7
 }}
 
 define service {{
     use                     generic-service
     host_name               {site}
     service_description     Humidity
-    check_command           check_dummy!3!"No data received"
+    check_command           check_dummy!3!No data received
     active_checks_enabled   0
     passive_checks_enabled  1
     check_freshness         1
     freshness_threshold     120
+    notification_period     24x7
 }}
 
 define service {{
     use                     generic-service
     host_name               {site}
     service_description     Power
-    check_command           check_dummy!3!"No data received"
+    check_command           check_dummy!3!No data received
     active_checks_enabled   0
     passive_checks_enabled  1
     check_freshness         1
     freshness_threshold     120
+    notification_period     24x7
 }}
 """
     os.makedirs(NAGIOS_CONF, exist_ok=True)
@@ -131,7 +135,7 @@ def reload_nagios():
     try:
         result = subprocess.run(
             ['docker', 'exec', NAGIOS_CONTAINER,
-             'bash', '-c', 'kill -HUP $(cat /opt/nagios/var/nagios.lock)'],
+             'bash', '-c', 'kill -HUP $(pgrep -x nagios | head -1)'],
             capture_output=True, timeout=10
         )
         if result.returncode == 0:
