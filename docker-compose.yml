@@ -3,7 +3,6 @@ version: "3.8"
 services:
   mqtt-broker:
     image: eclipse-mosquitto:2
-    container_name: mqtt-broker
     ports:
       - "1884:1883"
     volumes:
@@ -14,7 +13,6 @@ services:
 
   nagios:
     image: jasonrivers/nagios:latest
-    container_name: nagios
     ports:
       - "8080:80"
     environment:
@@ -27,7 +25,6 @@ services:
 
   publisher:
     image: alpine:3.20
-    container_name: publisher
     command: sh /scripts/publisher.sh
     volumes:
       - ./scripts:/scripts:ro
@@ -37,7 +34,6 @@ services:
 
   sidecar:
     build: ./sidecar
-    container_name: nagios-sidecar
     environment:
       MQTT_BROKER: mqtt-broker
       MQTT_PORT: "1883"

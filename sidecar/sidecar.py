@@ -124,6 +124,17 @@ define service {{
     return True
 
 
+def _resolve_container():
+    """Return container ID for the Nagios service via Compose label lookup."""
+    result = subprocess.run(
+        ['docker', 'ps', '--filter', f'label=com.docker.compose.service={NAGIOS_CONTAINER}',
+         '--format', '{{.ID}}'],
+        capture_output=True, timeout=5
+    )
+    ids = result.stdout.decode().strip().splitlines()
+    return ids[0] if ids else None
+
+
 def reload_nagios():
     """Send SIGHUP to the Nagios process via docker exec to reload config."""
     global last_reload
@@ -131,10 +142,14 @@ def reload_nagios():
     if now - last_reload < 15:
         return
     last_reload = now
-    log.info(f'Reloading Nagios config in container {NAGIOS_CONTAINER}')
+    container_id = _resolve_container()
+    if not container_id:
+        log.error(f'Could not find container for service {NAGIOS_CONTAINER}')
+        return
+    log.info(f'Reloading Nagios config in container {container_id} (service={NAGIOS_CONTAINER})')
     try:
         result = subprocess.run(
-            ['docker', 'exec', NAGIOS_CONTAINER,
+            ['docker', 'exec', container_id,
              'bash', '-c', 'kill -HUP $(pgrep -x nagios | head -1)'],
             capture_output=True, timeout=10
         )
