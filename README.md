@@ -38,7 +38,7 @@ Mirrors the design and MQTT topology of the [mqtt2](https://github.com/mmorrow24
 
 ---
 
-## Dashboard
+## Nagios Dashboards
 
 ### Tactical Overview
 
@@ -59,6 +59,44 @@ The service detail view lists all sites with their three metrics — Temperature
 Each site has its own host page showing current telemetry values from the sensor simulation.
 
 ![Site1 Detail](docs/screenshots/site1-detail.png)
+
+---
+
+## Grafana Dashboards
+
+Three Grafana dashboards are provisioned into the standalone Grafana instance (port 5000) under the `datasource-nagios` Prometheus datasource, which points to the [prometheus-mqtt](https://github.com/mmorrow24work/prometheus-mqtt) Prometheus instance at port 9090.
+
+Run the provisioning script to create or restore them:
+
+```bash
+python3 scripts/provision_grafana_dashboards.py
+```
+
+> Requires the standalone `grafana` container to be running on port 5000 and connected to the `prometheus-mqtt_monitoring` Docker network. The showcase dashboard also requires the prometheus-mqtt Grafana to be running on port 3000.
+
+### IoT Sensor Lab — M6 Corridor (Nagios)
+
+`http://localhost:5000/d/nagios-iot-sensors/`
+
+Fleet summary stats (avg/max temperature and power, breach counts), current values per site, time-series for all three metrics, and a top-10 power bar chart. Mirrors the main prometheus-mqtt dashboard with the `datasource-nagios` datasource.
+
+### Nagios Service Health — M6 Corridor
+
+`http://localhost:5000/d/nagios-service-health/`
+
+Maps the Nagios passive check thresholds (WARN/CRIT for temp, power, humidity) to Prometheus queries. Shows per-metric breach counts as stat panels and threshold-line time series so you can correlate Grafana alert state with what Nagios would report.
+
+| Metric | WARNING threshold | CRITICAL threshold |
+|---|---|---|
+| Temperature | ≥ 20°C | ≥ 22°C |
+| Humidity | ≥ 75% | ≥ 85% |
+| Power | ≥ 390 W | ≥ 415 W |
+
+### IoT Sensor Lab (Nagios) — Operational Insights
+
+`http://localhost:5000/d/nagios-iot-showcase/`
+
+Cloned from the `iot-mqtt-showcase` dashboard in the prometheus-mqtt lab and repointed to `datasource-nagios`. Fetched live from port 3000 at provisioning time so it stays in sync with the source.
 
 ---
 
@@ -125,7 +163,8 @@ nagios-mqtt/
 │       ├── 00-commands.cfg     # check_dummy command definition
 │       └── site*.cfg           # Auto-generated at runtime by sidecar
 ├── scripts/
-│   └── publisher.sh            # IoT telemetry publisher (M6 corridor sites)
+│   ├── publisher.sh            # IoT telemetry publisher (M6 corridor sites)
+│   └── provision_grafana_dashboards.py  # Provisions 3 Grafana dashboards (datasource-nagios)
 ├── sidecar/
 │   ├── sidecar.py              # MQTT → Nagios passive check bridge
 │   └── Dockerfile              # python:3.12-alpine + docker-cli + paho-mqtt
