@@ -1,3 +1,16 @@
+```mermaid
+---
+title: frr01
+---
+graph TD
+  router1---router2
+  router1---router3
+  router2---router3
+  PC1---router1
+  PC2---router2
+  PC3---router3
+```
+
 # Nagios MQTT Monitoring Lab
 
 A fully containerised MQTT IoT monitoring lab combining **Eclipse Mosquitto**, **Nagios Core 4.5**, and a Python **sidecar** to simulate 15 IoT sensor sites along the M6 corridor, auto-provision Nagios hosts and services, and visualise telemetry via passive check results.
