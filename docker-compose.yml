@@ -12,9 +12,9 @@ services:
     restart: unless-stopped
 
   nagios:
-    image: jasonrivers/nagios:latest
+    build: ./nagios
     ports:
-      - "8080:80"
+      - "8088:80"
     environment:
       NAGIOSADMIN_USER: nagiosadmin
       NAGIOSADMIN_PASS: nagios
