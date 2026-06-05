@@ -80,6 +80,8 @@ python3 scripts/provision_grafana_dashboards.py
 
 Fleet summary stats (avg/max temperature and power, breach counts), current values per site, time-series for all three metrics, and a top-10 power bar chart. Mirrors the main prometheus-mqtt dashboard with the `datasource-nagios` datasource.
 
+![IoT Sensors Dashboard](docs/screenshots/grafana-iot-sensors.png)
+
 ### Nagios Service Health — M6 Corridor
 
 `http://localhost:5000/d/nagios-service-health/`
@@ -92,11 +94,15 @@ Maps the Nagios passive check thresholds (WARN/CRIT for temp, power, humidity) t
 | Humidity | ≥ 75% | ≥ 85% |
 | Power | ≥ 390 W | ≥ 415 W |
 
+![Service Health Dashboard](docs/screenshots/grafana-service-health.png)
+
 ### IoT Sensor Lab (Nagios) — Operational Insights
 
 `http://localhost:5000/d/nagios-iot-showcase/`
 
 Cloned from the `iot-mqtt-showcase` dashboard in the prometheus-mqtt lab and repointed to `datasource-nagios`. Fetched live from port 3000 at provisioning time so it stays in sync with the source.
+
+![Operational Insights Dashboard](docs/screenshots/grafana-iot-showcase.png)
 
 ---
 
