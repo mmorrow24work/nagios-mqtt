@@ -3,7 +3,7 @@
 Push Nagios-labelled Grafana dashboards to the standalone Grafana instance (port 5000).
 Datasource: datasource-nagios -> prometheus-mqtt-prometheus-1:9090
 """
-import json, sys
+import json, sys, copy
 import urllib.request, urllib.error
 
 GRAFANA_URL = "http://localhost:5000"
@@ -240,15 +240,52 @@ health_dashboard = {
 }
 
 
-# ── Post both dashboards ──────────────────────────────────────────────────────
+# ── Dashboard 3: Showcase (cloned from prometheus-mqtt iot-mqtt-showcase) ─────
 
-for db in [sensors_dashboard, health_dashboard]:
+def fetch_showcase():
+    """Clone iot-mqtt-showcase from Grafana port 3000, repoint to datasource-nagios."""
+    req = urllib.request.Request("http://localhost:3000/api/dashboards/uid/iot-mqtt-showcase")
+    import base64
+    req.add_header("Authorization", "Basic " + base64.b64encode(b"admin:admin").decode())
+    try:
+        with urllib.request.urlopen(req) as r:
+            src = json.load(r)["dashboard"]
+    except Exception as e:
+        print(f"  Could not fetch showcase from port 3000: {e}")
+        return None
+    db = json.loads(json.dumps(src).replace('"uid": "prometheus"', '"uid": "datasource-nagios"')
+                                  .replace('"uid":"prometheus"', '"uid":"datasource-nagios"'))
+    db["id"] = None
+    db["uid"] = "nagios-iot-showcase"
+    db["title"] = db.get("title", "").replace("IoT Sensor Lab", "IoT Sensor Lab (Nagios)")
+    tags = db.get("tags", [])
+    if "datasource-nagios" not in tags:
+        tags.insert(0, "datasource-nagios")
+    db["tags"] = tags
+    return db
+
+
+# ── Post all dashboards ───────────────────────────────────────────────────────
+
+static_dashboards = [sensors_dashboard, health_dashboard]
+
+for db in static_dashboards:
     print(f"Posting: {db['title']}")
     api("/api/dashboards/db", {
         "dashboard": db,
         "overwrite": True,
         "folderId": 0,
         "message": "provisioned by nagios-mqtt",
+    })
+
+showcase = fetch_showcase()
+if showcase:
+    print(f"Posting: {showcase['title']}")
+    api("/api/dashboards/db", {
+        "dashboard": showcase,
+        "overwrite": True,
+        "folderId": 0,
+        "message": "provisioned from iot-mqtt-showcase",
     })
 
 print("Done.")
