@@ -64,12 +64,14 @@ Each site has its own host page showing current telemetry values from the sensor
 
 ## Components
 
-| Container | Image | Role |
+| Service | Image | Role |
 |---|---|---|
 | `mqtt-broker` | `eclipse-mosquitto:2` | MQTT broker on port 1883 (host: 1884) |
 | `publisher` | `alpine:3.20` | Simulates 15 IoT sites — temp, humidity, power, location |
-| `nagios-sidecar` | *(built from `sidecar/`)* | Watches MQTT, auto-creates Nagios host/service configs, submits passive check results |
-| `nagios` | `jasonrivers/nagios:latest` | Nagios Core 4.5 with Apache (port 8080) |
+| `sidecar` | *(built from `sidecar/`)* | Watches MQTT, auto-creates Nagios host/service configs, submits passive check results |
+| `nagios` | *(built from `nagios/`)* | Nagios Core 4.5 with Apache form login (port 8088) |
+
+Container names follow Docker Compose defaults: `nagios-mqtt-<service>-1`.
 
 ---
 
@@ -116,6 +118,9 @@ nagios-mqtt/
 │   └── config/
 │       └── mosquitto.conf      # Port 1883, anonymous, persistence
 ├── nagios/
+│   ├── Dockerfile              # Extends jasonrivers/nagios — enables form auth modules
+│   ├── apache-nagios.conf      # Apache config — form-based login (works in all browsers)
+│   ├── login.html              # Login form served at /nagios/login.html
 │   └── conf.d/
 │       ├── 00-commands.cfg     # check_dummy command definition
 │       └── site*.cfg           # Auto-generated at runtime by sidecar
@@ -140,7 +145,17 @@ cd ~/git/nagios-mqtt
 docker compose up -d --build
 ```
 
-Nagios UI → **http://localhost:8080** — `nagiosadmin` / `nagios`
+Nagios UI → **http://localhost:8088/nagios/** — `nagiosadmin` / `nagios`
+
+---
+
+## UI Notes
+
+This stack runs **Nagios Core**, which ships with the same classic web interface it has had since the early 2000s — functional but dated. The screenshots in this repo reflect that UI.
+
+**Nagios XI** is the commercial/enterprise edition from Nagios Enterprises. It adds a significantly more modern dashboard, drag-and-drop configuration wizards, capacity planning graphs, and role-based access control — but it is paid software and not part of this open-source lab.
+
+If you want a modern UI on top of Nagios Core without paying for XI, **[Thruk](https://thruk.org/)** is the main open-source alternative. It provides a contemporary interface and connects to Nagios via the mk-livestatus event broker module. Adding Thruk to this stack requires compiling mk-livestatus from source, as no Ubuntu 24 binary package exists — this is left as a future enhancement.
 
 ---
 
